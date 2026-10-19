@@ -1,0 +1,53 @@
+name: Build Kernel Module
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential bc bison flex libssl-dev libelf-dev zip git curl python3
+
+    - name: Download Android Common Kernel
+      run: |
+        mkdir kernel
+        cd kernel
+        git clone --depth=1 https://android.googlesource.com/kernel/common -b android14-6.1
+        cd ..
+
+    - name: Download AOSP Clang
+      run: |
+        mkdir clang
+        cd clang
+        wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r522817.tar.gz
+        tar -xzf clang-r522817.tar.gz
+        cd ..
+        echo "CLANG_PATH=$PWD/clang/bin" >> $GITHUB_ENV
+
+    - name: Build Module
+      run: |
+        cd "lsdriver"
+        make ARCH=arm64 \
+             LLVM=1 \
+             CC=${{ env.CLANG_PATH }}/clang \
+             LD=${{ env.CLANG_PATH }}/ld.lld \
+             KDIR=${{ github.workspace }}/kernel/common \
+             -j$(nproc)
+
+    - name: Upload compiled module
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsdriver-ko
+        path: "**/*.ko"
