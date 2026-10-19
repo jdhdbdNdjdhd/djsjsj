@@ -38,12 +38,12 @@ jobs:
 
     - name: Build Module
       run: |
-        cd "lsdriver"
         make ARCH=arm64 \
              LLVM=1 \
              CC=${{ env.CLANG_PATH }}/clang \
              LD=${{ env.CLANG_PATH }}/ld.lld \
-             KDIR=${{ github.workspace }}/kernel/common \
+             -C ${{ github.workspace }}/kernel/common \
+             M=${{ github.workspace }}/lsdriver \
              -j$(nproc)
 
     - name: Upload compiled module
