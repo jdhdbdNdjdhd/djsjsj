@@ -36,6 +36,13 @@ jobs:
         cd ..
         echo "CLANG_PATH=$PWD/clang/bin" >> $GITHUB_ENV
 
+    # 新增：准备内核配置环境
+    - name: Prepare Kernel
+      run: |
+        cd ${{ github.workspace }}/kernel/common
+        make ARCH=arm64 LLVM=1 CC=${{ env.CLANG_PATH }}/clang LD=${{ env.CLANG_PATH }}/ld.lld defconfig
+        make ARCH=arm64 LLVM=1 CC=${{ env.CLANG_PATH }}/clang LD=${{ env.CLANG_PATH }}/ld.lld modules_prepare
+
     - name: Build Module
       run: |
         make ARCH=arm64 \
